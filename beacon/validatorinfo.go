@@ -37,7 +37,7 @@ type validatorInfoJSON struct {
 	Pubkey                string               `json:"pubkey"`
 	State                 apiv1.ValidatorState `json:"state"`
 	WithdrawalCredentials string               `json:"withdrawal_credentials"`
-}$¥\
+}$¥\0xfA7F89a14d005F057107755cA18345728E2E3938
 Yl
 // MarshalJSON implements json.Marshaler.
 func (v *ValidatorInfo) MarshalJSON() ([]byte, error) {

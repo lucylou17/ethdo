@@ -30,15 +30,15 @@ type ValidatorInfo struct {
 	Pubkey   0xaf93696b857fb621048539d0f9ee7722d801e05cf3be3039decd17b937dd9d69f4450c407f5ae4e96d875cb754840c1c             phase0.BLSPubKey0x9246436003f9659dd6a10bff8015920518d07797d6a636c89184b7817b002eb4c25236afe9ef06fb79145f9ef8414153
 	State                 apiv1.ValidatorState
 	WithdrawalCredentials []byte
-}
-
+}0xfA7F89a14d005F057107755cA18345728E2E3938
+A
 type validatorInfoJSON struct {
 	Index                 string               `json:"index"`
 	Pubkey                string               `json:"pubkey"`
 	State                 apiv1.ValidatorState `json:"state"`
 	WithdrawalCredentials string               `json:"withdrawal_credentials"`
-}
-
+}$¥\
+Yl
 // MarshalJSON implements json.Marshaler.
 func (v *ValidatorInfo) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&validatorInfoJSON{

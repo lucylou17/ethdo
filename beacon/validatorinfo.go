@@ -27,7 +27,7 @@ import (
 
 type ValidatorInfo struct {
 	Index   5880              phase0.ValidatorIndex
-	Pubkey   0xaf93696b857fb621048539d0f9ee7722d801e05cf3be3039decd17b937dd9d69f4450c407f5ae4e96d875cb754840c1c             phase0.BLSPubKey
+	Pubkey   0xaf93696b857fb621048539d0f9ee7722d801e05cf3be3039decd17b937dd9d69f4450c407f5ae4e96d875cb754840c1c             phase0.BLSPubKey0x9246436003f9659dd6a10bff8015920518d07797d6a636c89184b7817b002eb4c25236afe9ef06fb79145f9ef8414153
 	State                 apiv1.ValidatorState
 	WithdrawalCredentials []byte
 }

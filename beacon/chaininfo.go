@@ -130,6 +130,18 @@ func (c *ChainInfo) UnmarshalJSON(input []byte) error {
 	}
 	copy(c.GenesisForkVersion[:], genesisForkVersionBytes)
 
+	if data.ExitForkVersion == "" {
+		return errors.New("exit fork version missing")
+	}
+	exitForkVersionBytes, err := hex.DecodeString(strings.TrimPrefix(data.ExitForkVersion, "0x"))
+	if err != nil {
+		return errors.Wrap(err, "exit fork version invalid")
+	}
+	if len(exitForkVersionBytes) != phase0.ForkVersionLength {
+		return errors.New("exit fork version incorrect length")
+	}
+	copy(c.ExitForkVersion[:], exitForkVersionBytes)
+
 	if data.CurrentForkVersion == "" {
 		return errors.New("current fork version missing")
 	}
@@ -235,18 +247,18 @@ func ObtainChainInfoFromNode(ctx context.Context,
 	error,
 ) {
 	res := &ChainInfo{
-		Version:    2,
+		Version:    3,
 		Validators: make([]*ValidatorInfo, 0),
 		Epoch:      chainTime.CurrentEpoch(),
 	}
 
 	// Obtain validators.
-	validators, err := consensusClient.(consensusclient.ValidatorsProvider).Validators(ctx, "head", nil)
+	validatorsResponse, err := consensusClient.(consensusclient.ValidatorsProvider).Validators(ctx, &api.ValidatorsOpts{State: "head"})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to obtain validators")
 	}
 
-	for _, validator := range validators {
+	for _, validator := range validatorsResponse.Data {
 		res.Validators = append(res.Validators, &ValidatorInfo{
 			Index:                 validator.Index,
 			Pubkey:                validator.Validator.PublicKey,
@@ -254,20 +266,24 @@ func ObtainChainInfoFromNode(ctx context.Context,
 			State:                 validator.Status,
 		})
 	}
+	// Order validators by index.
+	sort.Slice(res.Validators, func(i int, j int) bool {
+		return res.Validators[i].Index < res.Validators[j].Index
+	})
 
 	// Genesis validators root obtained from beacon node.
-	genesis, err := consensusClient.(consensusclient.GenesisProvider).Genesis(ctx)
+	genesisResponse, err := consensusClient.(consensusclient.GenesisProvider).Genesis(ctx, &api.GenesisOpts{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to obtain genesis information")
 	}
-	res.GenesisValidatorsRoot = genesis.GenesisValidatorsRoot
+	res.GenesisValidatorsRoot = genesisResponse.Data.GenesisValidatorsRoot
 
 	// Fetch the genesis fork version from the specification.
-	spec, err := consensusClient.(consensusclient.SpecProvider).Spec(ctx)
+	specResponse, err := consensusClient.(consensusclient.SpecProvider).Spec(ctx, &api.SpecOpts{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to obtain spec")
 	}
-	tmp, exists := spec["GENESIS_FORK_VERSION"]
+	tmp, exists := specResponse.Data["GENESIS_FORK_VERSION"]
 	if !exists {
 		return nil, errors.New("genesis fork version not known by chain")
 	}
@@ -277,24 +293,34 @@ func ObtainChainInfoFromNode(ctx context.Context,
 		return nil, errors.New("could not obtain GENESIS_FORK_VERSION")
 	}
 
+	// Fetch the exit fork version (Capella) from the specification.
+	tmp, exists = specResponse.Data["CAPELLA_FORK_VERSION"]
+	if !exists {
+		return nil, errors.New("capella fork version not known by chain")
+	}
+	res.ExitForkVersion, isForkVersion = tmp.(phase0.Version)
+	if !isForkVersion {
+		return nil, errors.New("could not obtain CAPELLA_FORK_VERSION")
+	}
+
 	// Fetch the current fork version from the fork schedule.
-	forkSchedule, err := consensusClient.(consensusclient.ForkScheduleProvider).ForkSchedule(ctx)
+	forkScheduleResponse, err := consensusClient.(consensusclient.ForkScheduleProvider).ForkSchedule(ctx, &api.ForkScheduleOpts{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to obtain fork schedule")
 	}
-	for i := range forkSchedule {
-		if forkSchedule[i].Epoch <= res.Epoch {
-			res.CurrentForkVersion = forkSchedule[i].CurrentVersion
+	for i := range forkScheduleResponse.Data {
+		if forkScheduleResponse.Data[i].Epoch <= res.Epoch {
+			res.CurrentForkVersion = forkScheduleResponse.Data[i].CurrentVersion
 		}
 	}
 
-	blsToExecutionChangeDomainType, exists := spec["DOMAIN_BLS_TO_EXECUTION_CHANGE"].(phase0.DomainType)
+	blsToExecutionChangeDomainType, exists := specResponse.Data["DOMAIN_BLS_TO_EXECUTION_CHANGE"].(phase0.DomainType)
 	if !exists {
 		return nil, errors.New("failed to obtain DOMAIN_BLS_TO_EXECUTION_CHANGE")
 	}
 	copy(res.BLSToExecutionChangeDomainType[:], blsToExecutionChangeDomainType[:])
 
-	voluntaryExitDomainType, exists := spec["DOMAIN_VOLUNTARY_EXIT"].(phase0.DomainType)
+	voluntaryExitDomainType, exists := specResponse.Data["DOMAIN_VOLUNTARY_EXIT"].(phase0.DomainType)
 	if !exists {
 		return nil, errors.New("failed to obtain DOMAIN_VOLUNTARY_EXIT")
 	}

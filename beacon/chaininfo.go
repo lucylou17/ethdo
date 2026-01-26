@@ -18,10 +18,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
 	consensusclient "github.com/attestantio/go-eth2-client"
+	"github.com/attestantio/go-eth2-client/api"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/pkg/errors"
 	"github.com/wealdtech/ethdo/services/chaintime"
@@ -34,6 +36,7 @@ type ChainInfo struct {
 	GenesisValidatorsRoot          phase0.Root
 	Epoch                          phase0.Epoch
 	GenesisForkVersion             phase0.Version
+	ExitForkVersion                phase0.Version
 	CurrentForkVersion             phase0.Version
 	BLSToExecutionChangeDomainType phase0.DomainType
 	VoluntaryExitDomainType        phase0.DomainType
@@ -45,6 +48,7 @@ type chainInfoJSON struct {
 	GenesisValidatorsRoot          string           `json:"genesis_validators_root"`
 	Epoch                          string           `json:"epoch"`
 	GenesisForkVersion             string           `json:"genesis_fork_version"`
+	ExitForkVersion                string           `json:"exit_fork_version"`
 	CurrentForkVersion             string           `json:"current_fork_version"`
 	BLSToExecutionChangeDomainType string           `json:"bls_to_execution_change_domain_type"`
 	VoluntaryExitDomainType        string           `json:"voluntary_exit_domain_type"`
@@ -57,11 +61,12 @@ type chainInfoVersionJSON struct {
 // MarshalJSON implements json.Marshaler.
 func (c *ChainInfo) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&chainInfoJSON{
-		Version:                        fmt.Sprintf("%d", c.Version),
+		Version:                        strconv.FormatUint(c.Version, 10),
 		Validators:                     c.Validators,
 		GenesisValidatorsRoot:          fmt.Sprintf("%#x", c.GenesisValidatorsRoot),
 		Epoch:                          fmt.Sprintf("%d", c.Epoch),
 		GenesisForkVersion:             fmt.Sprintf("%#x", c.GenesisForkVersion),
+		ExitForkVersion:                fmt.Sprintf("%#x", c.ExitForkVersion),
 		CurrentForkVersion:             fmt.Sprintf("%#x", c.CurrentForkVersion),
 		BLSToExecutionChangeDomainType: fmt.Sprintf("%#x", c.BLSToExecutionChangeDomainType),
 		VoluntaryExitDomainType:        fmt.Sprintf("%#x", c.VoluntaryExitDomainType),
@@ -82,7 +87,7 @@ func (c *ChainInfo) UnmarshalJSON(input []byte) error {
 	if err != nil {
 		return errors.Wrap(err, "version invalid")
 	}
-	if version < 2 {
+	if version < 3 {
 		return errors.New("outdated version; please regenerate your offline data")
 	}
 	c.Version = version

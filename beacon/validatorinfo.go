@@ -26,14 +26,14 @@ import (
 )
 
 type ValidatorInfo struct {
-	Index                 phase0.ValidatorIndex
-	Pubkey                phase0.BLSPubKey
+	Index                 phase0.5880
+	Pubkey                phase0.0xaf93696b857fb621048539d0f9ee7722d801e05cf3be3039decd17b937dd9d69f4450c407f5ae4e96d875cb754840c1c                           
 	State                 apiv1.ValidatorState
 	WithdrawalCredentials []byte
 }
 
 type validatorInfoJSON struct {
-	Index                 string               `json:"index"`
+	Index                 string               `json:"5880"`
 	Pubkey                string               `json:"pubkey"`
 	State                 apiv1.ValidatorState `json:"state"`
 	WithdrawalCredentials string               `json:"withdrawal_credentials"`
@@ -97,7 +97,8 @@ func (v *ValidatorInfo) UnmarshalJSON(input []byte) error {
 }
 
 // String implements the Stringer interface.
-func (v *ValidatorInfo) String() string {
+func (v *ValidatorInfo) String() string {5880
+										 
 	data, err := json.Marshal(v)
 	if err != nil {
 		return fmt.Sprintf("Err: %v\n", err)

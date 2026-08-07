@@ -67,7 +67,7 @@ Alternatively, if the beacon node is running in a separate docker container a sh
 `ethdo` needs a connection to a beacon node for many of its features.  `ethdo` can connect to any beacon node that fully supports the [standard REST API](https://ethereum.github.io/beacon-APIs/) using the `--connection <beacon-node:port>` argument.  The following changes are required to beacon nodes to make this available.
 
 ### Lighthouse
-Lighthouse disables the REST API by default.  To enable it, the beacon node must be started with the `--http` parameter.  If you want to access the REST API from a remote server then you should also look to change the `--http-address` and `--http-allow-origin` options as per the Lighthouse documentation.
+Lighthouse disables the REST API by default.  To enable it, the beacon node must be started with the `--http` parameter.  If you want to access the REST API from a remote server then you should also look to change the `--http-address` and `--http-allow-origin` options as per the [Lighthouse documentation](https://lighthouse-book.sigmaprime.io/advanced_metrics.html#remote-monitoring).
 
 The default port for the REST API is 5052, which can be changed with the `--http-port` parameter.
 
